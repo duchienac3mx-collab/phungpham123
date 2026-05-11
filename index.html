@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PHUNGPHAM</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    overflow:hidden;
+    background:#000;
+    height:100vh;
+    font-family:Arial, sans-serif;
+}
+
+canvas{
+    position:absolute;
+    top:0;
+    left:0;
+}
+
+/* =========================
+   CHỮ PHUNGPHAM SỐNG ĐỘNG
+========================= */
+
+.center-text{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    z-index:10;
+    text-align:center;
+    pointer-events:none;
+}
+
+.center-text h1{
+    font-size:42px;
+    letter-spacing:6px;
+    color:#ff4d94;
+    text-transform:uppercase;
+
+    text-shadow:
+        0 0 5px #ff4d94,
+        0 0 10px #ff4d94,
+        0 0 20px #ff0066,
+        0 0 40px #ff0066,
+        0 0 80px #ff0066;
+
+    animation:
+        glowText 2s infinite alternate,
+        floating 4s ease-in-out infinite;
+}
+
+@keyframes glowText{
+    0%{
+        filter:hue-rotate(0deg);
+        transform:scale(1);
+    }
+
+    100%{
+        filter:hue-rotate(20deg);
+        transform:scale(1.05);
+    }
+}
+
+@keyframes floating{
+    0%{transform:translateY(0px);}
+    50%{transform:translateY(-10px);}
+    100%{transform:translateY(0px);}
+}
+
+</style>
+</head>
+
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div class="center-text">
+    <h1>PHUNGPHAM</h1>
+</div>
+
+<script>
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+canvas.width = innerWidth;
+canvas.height = innerHeight;
+
+window.addEventListener("resize",()=>{
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
+});
+
+// =========================
+// SAO LẤP LÁNH
+// =========================
+
+const stars = [];
+
+for(let i=0;i<250;i++){
+
+    stars.push({
+        x:Math.random()*canvas.width,
+        y:Math.random()*canvas.height,
+        size:Math.random()*2,
+        speed:Math.random()*0.3+0.1,
+        alpha:Math.random()
+    });
+}
+
+function drawStars(){
+
+    stars.forEach(star=>{
+
+        ctx.beginPath();
+
+        ctx.arc(
+            star.x,
+            star.y,
+            star.size,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fillStyle=`rgba(255,255,255,${star.alpha})`;
+
+        ctx.shadowBlur=10;
+        ctx.shadowColor="#fff";
+
+        ctx.fill();
+
+        star.y += star.speed;
+
+        if(star.y > canvas.height){
+
+            star.y = 0;
+            star.x = Math.random()*canvas.width;
+        }
+
+        star.alpha += (Math.random()-0.5)*0.05;
+
+        if(star.alpha < 0.2) star.alpha = 0.2;
+        if(star.alpha > 1) star.alpha = 1;
+
+    });
+}
+
+// =========================
+// TRÁI TIM GHÉP MẢNH
+// =========================
+
+const particles = [];
+const total = 2500;
+
+function createHeart(){
+
+    particles.length = 0;
+
+    for(let i=0;i<total;i++){
+
+        const t = Math.random()*Math.PI*2;
+
+        const heartX = 16*Math.pow(Math.sin(t),3);
+
+        const heartY = -(13*Math.cos(t)
+                    -5*Math.cos(2*t)
+                    -2*Math.cos(3*t)
+                    -Math.cos(4*t));
+
+        const scale = 20;
+
+        const targetX = canvas.width/2 + heartX*scale;
+
+        const targetY = canvas.height/2 + heartY*scale;
+
+        particles.push({
+
+            x:Math.random()*canvas.width,
+            y:Math.random()*canvas.height,
+
+            tx:targetX,
+            ty:targetY,
+
+            size:Math.random()*3+1,
+
+            color:`hsl(${330 + Math.random()*40},100%,60%)`,
+
+            speed:Math.random()*0.02+0.01,
+
+            angle:Math.random()*6.28
+        });
+    }
+}
+
+createHeart();
+
+function drawHeart(){
+
+    const time = Date.now()*0.002;
+
+    particles.forEach(p=>{
+
+        // Hiệu ứng trái tim đập
+
+        const pulse = Math.sin(time)*8;
+
+        const dx = p.tx - canvas.width/2;
+        const dy = p.ty - canvas.height/2;
+
+        const dist = Math.sqrt(dx*dx + dy*dy);
+
+        const moveX = dx/dist * pulse;
+        const moveY = dy/dist * pulse;
+
+        const finalX = p.tx + moveX;
+        const finalY = p.ty + moveY;
+
+        // Mảnh ghép tụ lại
+
+        p.x += (finalX - p.x)*p.speed;
+        p.y += (finalY - p.y)*p.speed;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            p.x,
+            p.y,
+            p.size,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fillStyle = p.color;
+
+        ctx.shadowBlur = 25;
+        ctx.shadowColor = p.color;
+
+        ctx.fill();
+
+    });
+}
+
+// =========================
+// ÁNH SÁNG
+// =========================
+
+function glowEffect(){
+
+    const gradient = ctx.createRadialGradient(
+        canvas.width/2,
+        canvas.height/2,
+        50,
+        canvas.width/2,
+        canvas.height/2,
+        400
+    );
+
+    gradient.addColorStop(0,"rgba(255,0,120,0.25)");
+    gradient.addColorStop(1,"rgba(0,0,0,0)");
+
+    ctx.beginPath();
+
+    ctx.fillStyle = gradient;
+
+    ctx.arc(
+        canvas.width/2,
+        canvas.height/2,
+        400,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+}
+
+// =========================
+// HIỆU ỨNG TRÁI TIM NHỎ BAY
+// =========================
+
+const miniHearts = [];
+
+for(let i=0;i<40;i++){
+
+    miniHearts.push({
+
+        x:Math.random()*canvas.width,
+        y:Math.random()*canvas.height,
+
+        size:Math.random()*8+4,
+
+        speed:Math.random()*1+0.5,
+
+        alpha:Math.random()
+    });
+}
+
+function drawMiniHearts(){
+
+    miniHearts.forEach(h=>{
+
+        ctx.font = `${h.size}px Arial`;
+
+        ctx.fillStyle = `rgba(255,80,140,${h.alpha})`;
+
+        ctx.shadowBlur = 20;
+         ctx.shadowColor = "#ff2d75";
+
+        ctx.fillText("❤",h.x,h.y);
+
+        h.y -= h.speed;
+
+        if(h.y < -20){
+
+            h.y = canvas.height+20;
+            h.x = Math.random()*canvas.width;
+        }
+    });
+}
+
+// =========================
+// ANIMATION
+// =========================
+
+function animate(){
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    drawStars();
+
+    glowEffect();
+
+    drawHeart();
+
+    drawMiniHearts();
+
+    requestAnimationFrame(animate);
+}
+
+animate();
+
+</script>
+
+</body>
+</html>
